@@ -1,4 +1,3 @@
-import javax.swing.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,31 +17,18 @@ public class StartComment {
 
     public void promptForComment() throws CancellationException {
         ArrayList<String> startCommentList = new ArrayList<>();
+
         startCommentList.add(filename);
-
-        String prompt = "File Start Comment:\n";
-
-        String description = JOptionPane.showInputDialog(null, prompt + formatStartComment(startCommentList) + "\nEnter file description:", Main.title, JOptionPane.PLAIN_MESSAGE);
-
-        if (description == null){
-            throw new CancellationException();
-        } else {
-            startCommentList.add(description);
-        }
-
+        startCommentList.add(prompt(startCommentList, "Enter file description:"));
         startCommentList.add("");
-
-        String name = JOptionPane.showInputDialog(null, prompt + formatStartComment(startCommentList) + "\nEnter programmer name (and student ID):", Main.title, JOptionPane.PLAIN_MESSAGE);
-
-        if (name == null){
-            throw new CancellationException();
-        } else {
-            startCommentList.add(name);
-        }
-
+        startCommentList.add(prompt(startCommentList, "Enter programmer name (and optionally student ID):"));
         startCommentList.add(getDate());
 
         comment = formatStartComment(startCommentList);
+    }
+
+    private String prompt(ArrayList<String> startCommentList, String inputPrompt) throws CancellationException {
+        return (new Prompter("File Start Comment:\n" + formatStartComment(startCommentList) + "\n" + inputPrompt)).prompt();
     }
 
     private String getDate(){

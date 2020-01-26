@@ -4,9 +4,9 @@ import java.util.concurrent.CancellationException;
 
 public class Main {
     static String title = "CCommenter";
+    static int tabSize = 4;
 
     public static void main(String[] args) {
-        /*
         File inputFile = getFile();
 
         if (inputFile == null){
@@ -15,26 +15,21 @@ public class Main {
         }
 
         StartComment sc = new StartComment(inputFile.getName());
-
         try {
             sc.promptForComment();
         } catch (CancellationException e){
             System.out.println("Cancelled");
             System.exit(0);
         }
-
         System.out.println(sc.getComment());
-        */
 
         FunctionComment fc = new FunctionComment("main() { }");
-
         try {
             fc.promptForComment();
         } catch (CancellationException e){
             System.out.println("Cancelled");
             System.exit(0);
         }
-
         System.out.println(fc.getComment());
     }
 

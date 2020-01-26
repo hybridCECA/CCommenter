@@ -1,13 +1,17 @@
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.concurrent.CancellationException;
 
 public class FunctionComment {
     private String code;
     private String comment;
+    private ArrayList<String> functionCommentList;
+    private ArrayList<ArrayList<String>> sectionLists;
+    private String[] sections = { "Preconditions:", "Postconditions:", "Parameters:\t", "Returns:\t\t", "Exceptions:\t" };
 
     public FunctionComment(String functionCode){
         code = functionCode;
+        functionCommentList = new ArrayList<>();
+        sectionLists = new ArrayList<>();
     }
 
     public String getComment() {
@@ -15,54 +19,55 @@ public class FunctionComment {
     }
 
     public void promptForComment() throws CancellationException {
-        ArrayList<String> functionCommentList = new ArrayList<>();
-
-        String prompt1 = "Function Code:\n";
-        String prompt2 = "\nFunction Comment:\n";
-
-        String description = JOptionPane.showInputDialog(null, prompt1 + code + prompt2 + formatFunctionComment(functionCommentList) + "\nEnter function description:", Main.title, JOptionPane.PLAIN_MESSAGE);
-
-        if(description == null){
-            throw new CancellationException();
-        } else {
-            functionCommentList.add(description);
-        }
-
+        functionCommentList.add(prompt("Enter function description:"));
         functionCommentList.add("");
 
-        String[] sections = { "Preconditions:", "Postconditions:", "Parameters:\t", "Returns:\t\t", "Exceptions:\t" };
-
-        ArrayList<ArrayList<String>> sectionLists = new ArrayList<>();
-
         for (String section : sections){
-            sectionLists.add(getFunctionSectionComment(section));
+            getFunctionSectionComment(section);
+            functionCommentList.add(formatSection(section, sectionLists.get(sectionLists.size()-1)));
+        }
+
+        for(int i=0; i<sections.length; i++){
+            functionCommentList.remove(functionCommentList.size()-1);
         }
 
         int generalMaxTabs = getMaxEvenTabsFromList(sectionLists);
-
         for (int i=0; i<sections.length; i++){
             functionCommentList.add(formatSection(sections[i], sectionLists.get(i), generalMaxTabs));
         }
 
         comment = formatFunctionComment(functionCommentList);
-
     }
 
-    private ArrayList<String> getFunctionSectionComment(String sectionTitle){
+    private String formatFunctionComment(ArrayList<String> fcList){
+        String startComment = "";
+
+        startComment += "/*\n";
+        for (String line : fcList){
+            startComment += " * " + line + "\n";
+        }
+        startComment+=" *\n";
+        startComment+=" */\n";
+
+        return startComment;
+    }
+
+
+    private void getFunctionSectionComment(String sectionTitle) throws CancellationException{
         ArrayList<String> sectionList = new ArrayList<>();
+        sectionLists.add(sectionList);
 
         while (true) {
-            String value = JOptionPane.showInputDialog(null, formatSection(sectionTitle, sectionList, getMaxEvenTabs(sectionList)) + "\nEnter value (or leave blank for none):", Main.title, JOptionPane.PLAIN_MESSAGE);
-            if(value == null || value.equals("")){
-                break;
-            } else {
-                sectionList.add(value);
-                String description = JOptionPane.showInputDialog(null, formatSection(sectionTitle, sectionList, getMaxEvenTabs(sectionList)) + "\nEnter description:", Main.title, JOptionPane.PLAIN_MESSAGE);
-                sectionList.add(description);
-            }
-        }
+            String value;
+            value = prompt("Enter " + sectionTitle.replaceAll(":", "") + " (or leave blank to continue):");
 
-        return sectionList;
+            if(value.equals("")) {
+                break;
+            }
+
+            sectionList.add(value);
+            sectionList.add(prompt("Enter description for " + sectionList.get(sectionList.size() -1) + ":"));
+        }
     }
 
     private String formatSection(String sectionTitle, ArrayList<String> list, int maxTabs){
@@ -85,14 +90,48 @@ public class FunctionComment {
             int descriptionIndex = 2*i+1;
             int extraTabs = getExtraTabs(list.get(valueIndex), maxTabs);
 
-            section += "\n *" + tabs(4) + "\t" + list.get(valueIndex) + tabs(extraTabs) + list.get(descriptionIndex);
+            if(descriptionIndex >= list.size()){
+                section += "\n *" + tabs(4) + "\t" + list.get(valueIndex);
+            } else {
+                section += "\n *" + tabs(4) + "\t" + list.get(valueIndex) + tabs(extraTabs) + list.get(descriptionIndex);
+            }
         }
 
         return section;
     }
 
+    private String formatSection(String sectionTitle, ArrayList<String> list){
+        return formatSection(sectionTitle, list, getMaxEvenTabs(list));
+    }
+
+    private String basicSectionFormat() {
+        String output = "";
+        int generalMaxTabs = getMaxEvenTabsFromList(sectionLists);
+        int i=0;
+
+        for (ArrayList<String> list : sectionLists){
+            output += formatSection(sections[i], list, generalMaxTabs).replace(" *", "") + "\n";
+            i++;
+        }
+        return output;
+    }
+
+    private String prompt(String inputPrompt) throws CancellationException{
+        return (new Prompter("Function Code:\n" + code + "\n\nFunction Comment:\n" + formatFunctionComment(functionCommentList) + "\n\n" + basicSectionFormat() + "\n\n" + inputPrompt)).prompt();
+    }
+
+    private String tabs(int num){
+        StringBuilder output = new StringBuilder();
+
+        for (int i = 0; i < num; i++){
+            output.append("\t");
+        }
+
+        return output.toString();
+    }
+
     private int getExtraTabs(String s, int tabs){
-        return tabs - s.length()/4;
+        return tabs - s.length()/Main.tabSize;
     }
 
     private int getMaxEvenTabs(ArrayList<String> list){
@@ -101,7 +140,7 @@ public class FunctionComment {
 
         for (String element : list){
             if(even){
-                int thisTabs = element.length()/4+1;
+                int thisTabs = element.length()/Main.tabSize + 1;
                 if(thisTabs > maxTabs){
                     maxTabs = thisTabs;
                 }
@@ -125,28 +164,5 @@ public class FunctionComment {
         }
 
         return max;
-    }
-
-    private String tabs(int num){
-        String output = "";
-
-        for (int i = 0; i < num; i++){
-            output += "\t";
-        }
-
-        return output;
-    }
-
-    private String formatFunctionComment(ArrayList<String> fcList){
-        String startComment = "";
-
-        startComment += "/*\n";
-        for (String line : fcList){
-            startComment += " * " + line + "\n";
-        }
-        startComment+=" *\n";
-        startComment+=" */\n";
-
-        return startComment;
     }
 }
