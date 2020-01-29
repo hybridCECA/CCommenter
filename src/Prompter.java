@@ -12,7 +12,7 @@ public class Prompter {
         JTextArea jt = new JTextArea(text);
         jt.setEditable(false);
         jt.setOpaque(false);
-        jt.setTabSize(2);
+        jt.setTabSize(3);
 
         String result = JOptionPane.showInputDialog(null, jt, Main.title, JOptionPane.PLAIN_MESSAGE);
 

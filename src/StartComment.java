@@ -37,15 +37,15 @@ public class StartComment {
     }
 
     private String formatStartComment(ArrayList<String> scList){
-        String startComment = "";
+        StringBuilder startComment = new StringBuilder();
 
-        startComment += "/*\n";
+        startComment.append("/*\n");
         for (String line : scList){
-            startComment += " * " + line + "\n";
+            startComment.append(" * ").append(line).append("\n");
         }
-        startComment+=" *\n";
-        startComment+=" */\n";
+        startComment.append(" *\n");
+        startComment.append(" */\n");
 
-        return startComment;
+        return startComment.toString();
     }
 }
