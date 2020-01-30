@@ -7,6 +7,7 @@ public class Main {
     static int tabSize = 4;
 
     public static void main(String[] args) {
+        /*
         File inputFile = getFile();
 
         if (inputFile == null){
@@ -23,6 +24,7 @@ public class Main {
         }
         System.out.println(sc.getComment());
 
+        */
         FunctionComment fc = new FunctionComment("main() { }");
         try {
             fc.promptForComment();

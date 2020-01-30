@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.awt.*;
 import java.util.concurrent.CancellationException;
 
 public class Prompter {
@@ -12,7 +13,8 @@ public class Prompter {
         JTextArea jt = new JTextArea(text);
         jt.setEditable(false);
         jt.setOpaque(false);
-        jt.setTabSize(3);
+        jt.setTabSize(Main.tabSize);
+        jt.setFont(new Font("monospaced", Font.PLAIN, 12));
 
         String result = JOptionPane.showInputDialog(null, jt, Main.title, JOptionPane.PLAIN_MESSAGE);
 
@@ -21,5 +23,30 @@ public class Prompter {
         } else {
             return result;
         }
+    }
+
+    private String tabsToSpaces (String s){
+        StringBuilder output = new StringBuilder();
+        int charsInRow = 0;
+
+        for (int i=0; i<s.length(); i++){
+            char currentCh = s.charAt(i);
+            if(currentCh == '\t'){
+                output.append(" ");
+                charsInRow++;
+                while(charsInRow%Main.tabSize != 0){
+                    output.append(" ");
+                    charsInRow++;
+                }
+            } else if (currentCh == '\n'){
+                output.append(currentCh);
+                charsInRow=0;
+            } else {
+                output.append(currentCh);
+                charsInRow++;
+            }
+        }
+
+        return output.toString();
     }
 }
