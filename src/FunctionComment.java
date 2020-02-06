@@ -3,13 +3,18 @@ import java.util.concurrent.CancellationException;
 
 public class FunctionComment {
     private String code;
+    private String returnType;
+    private ArrayList<String> parameters;
     private String comment;
     private String functionDescription;
     private ArrayList<ArrayList<String>> sectionLists;
     private String[] sections = { "Preconditions:", "Postconditions:", "Parameters:\t", "Returns:\t\t", "Exceptions:\t" };
 
-    public FunctionComment(String functionCode){
+    public FunctionComment(String functionCode, String returnT, ArrayList<String> p){
         code = functionCode;
+        returnType = returnT;
+        parameters = p;
+
         sectionLists = new ArrayList<>();
     }
 
@@ -32,12 +37,30 @@ public class FunctionComment {
         ArrayList<String> sectionList = new ArrayList<>();
         sectionLists.add(sectionList);
 
+        int parameterCounter = 0;
+        boolean returnDone = false;
+
         while (true) {
             String value;
-            value = prompt("Enter " + sectionTitle.replaceAll(":", "") + " (or leave blank to continue):");
 
-            if(value.equals("")) {
-                break;
+            if(sectionTitle.equals(sections[3])){
+                if(parameterCounter >= parameters.size()) {
+                    break;
+                }
+                value = parameters.get(parameterCounter);
+            } else if (sectionTitle.equals(sections[4])) {
+                if(returnDone) {
+                    break;
+                } else {
+                    value = returnType;
+                    returnDone = true;
+                }
+            } else {
+                value = prompt("Enter " + sectionTitle.replaceAll(":", "") + " (or leave blank to continue):");
+
+                if (value.equals("")) {
+                    break;
+                }
             }
 
             sectionList.add(value);
