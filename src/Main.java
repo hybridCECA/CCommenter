@@ -2,8 +2,10 @@ import org.apache.commons.io.FilenameUtils;
 
 import javax.swing.*;
 import java.io.*;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 
 public class Main {
@@ -41,21 +43,89 @@ public class Main {
         }
 
         // Parse ctags lines
-        ArrayList<ArrayList<String>> functionFields = getCtagLines(ctagsFile);
+        ArrayList<ArrayList<ArrayList<String>>> functionFields = getCtagLines(ctagsFile);
 
+        // Read in file
+        int line = 1;
+        ArrayList<String> functionStrings = new ArrayList<>();
+        String beforeF1;
 
-        // Read in file, trimming newlines
+        try {
+            StringBuilder beforeF1SB = new StringBuilder();
 
+            int f1Start = getFunctionStart(0, functionFields);
+            while (codeBR.ready() && line < f1Start) {
+                beforeF1SB.append(codeBR.readLine()).append("\n");
+                line++;
+            }
+            functionStrings.add(beforeF1SB.toString());
+
+            for(int functionNum = 0; functionNum < functionFields.size(); functionNum++){
+                StringBuilder functionSB = new StringBuilder();
+                while (codeBR.ready() && line < Integer.parseInt(functionFields.get(functionNum).get(0).get(1)) + 1){
+                    functionSB.append(codeBR.readLine()).append("\n");
+                    line++;
+                }
+                functionStrings.add(functionSB.toString());
+
+                StringBuilder afterFunctionSB = new StringBuilder();
+                while (codeBR.ready() && line < getFunctionStart(functionNum+1, functionFields)){
+                    afterFunctionSB.append(codeBR.readLine()).append("\n");
+                    line++;
+                }
+                functionStrings.add(afterFunctionSB.toString());
+            }
+
+            codeBR.close();
+        } catch (IOException e){
+            System.err.println("Error while reading file");
+            System.exit(1);
+        }
+
+        // Trim leading and trialing newlines from the strings
+        for(int i=0; i < functionStrings.size(); i++){
+            String trimmedString = trimNewlines(functionStrings.get(i));
+            functionStrings.set(i, trimmedString);
+        }
 
         // Get SC and write file
+        StartComment sc = new StartComment(inputFile.getName());
+        try {
+            sc.promptForComment();
 
+            codeBW.append(sc.getComment());
+            codeBW.newLine();
 
+            for (int i = 0; i < functionStrings.size(); i++) {
+                if(i % 2 == 1){
+                    int functionNumber = (i-1)/2;
+                    FunctionComment fc = new FunctionComment(functionStrings.get(i), functionFields.get(functionNumber).get(0).get(2), functionFields.get(functionNumber).get(1));
+                    fc.promptForComment();
 
+                    codeBW.newLine();
+                    codeBW.append(fc.getComment());
+                    codeBW.append(functionStrings.get(i));
+                    codeBW.newLine();
+                } else {
+                    codeBW.append(functionStrings.get(i));
+                    codeBW.newLine();
+                }
+            }
 
+            codeBW.close();
+        } catch (IOException e){
+            System.err.println("Error while writing file");
+            System.exit(1);
+        } catch (CancellationException e){
+            System.out.println("Cancelled");
+            System.exit(0);
+        }
 
+        JOptionPane.showMessageDialog(null, "Commented sucessfully", Main.title, JOptionPane.PLAIN_MESSAGE);
 
 
         //Junk
+        /*
         StartComment sc = new StartComment(inputFile.getName());
         try {
             sc.promptForComment();
@@ -87,6 +157,18 @@ public class Main {
         }
         System.out.println(fc.getComment());
         */
+    }
+
+    private static int getFunctionStart(int n, ArrayList<ArrayList<ArrayList<String>>> functionFields){
+        if(n<functionFields.size()){
+            return Integer.parseInt(functionFields.get(n).get(0).get(0));
+        } else {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    private static String trimNewlines (String s){
+         return s.replaceAll("\\A\\n+", "").replaceAll("\\n+\\z", "");
     }
 
     private static BufferedReader getReader(File inputFile){
@@ -148,9 +230,9 @@ public class Main {
         }
     }
 
-    private static ArrayList<ArrayList<String>> getCtagLines (File ctags){
+    private static ArrayList<ArrayList<ArrayList<String>>> getCtagLines (File ctags){
         BufferedReader ctagsBR = getReader(ctags);
-        ArrayList<ArrayList<String>> allFunctionBounds = new ArrayList<>();
+        ArrayList<ArrayList<ArrayList<String>>> allFunctionBounds = new ArrayList<>();
 
         try {
             while(ctagsBR.ready()){
@@ -158,17 +240,23 @@ public class Main {
                 if(line.charAt(0) != '!'){
                     String[] fields = line.split("\t");
 
-                    ArrayList<String> functionFields = new ArrayList<>();
+                    ArrayList<ArrayList<String>> functionFields = new ArrayList<>();
 
                     String start = getFunctionField(fields, "line:");
                     String end = getFunctionField(fields, "end:");
                     String returnType = getFunctionField(fields, "typeref:typename:");
+                    returnType = (returnType == null) ? "void" : returnType;
+
+                    ArrayList<String> info = new ArrayList<>();
+                    info.add(start);
+                    info.add(end);
+                    info.add(returnType);
+                    functionFields.add(info);
+
                     String parameters = getFunctionField(fields, "signature:").replaceAll("\\)$", "").replaceAll("^\\(", "");
 
-                    functionFields.add(start);
-                    functionFields.add(end);
-                    functionFields.add(returnType);
-                    functionFields.addAll(Arrays.asList(parameters.split(",")));
+                    ArrayList<String> parametersList = new ArrayList<String>(Arrays.asList(parameters.split(",")));
+                    functionFields.add(parametersList);
 
                     allFunctionBounds.add(functionFields);
                 }

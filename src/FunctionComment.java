@@ -43,12 +43,13 @@ public class FunctionComment {
         while (true) {
             String value;
 
-            if(sectionTitle.equals(sections[3])){
+            if(sectionTitle.equals(sections[2])){
                 if(parameterCounter >= parameters.size()) {
                     break;
                 }
                 value = parameters.get(parameterCounter);
-            } else if (sectionTitle.equals(sections[4])) {
+                parameterCounter++;
+            } else if (sectionTitle.equals(sections[3])) {
                 if(returnDone) {
                     break;
                 } else {
