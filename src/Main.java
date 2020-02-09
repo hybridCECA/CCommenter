@@ -2,19 +2,50 @@ import org.apache.commons.io.FilenameUtils;
 
 import javax.swing.*;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CancellationException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
     static String title = "CCommenter";
-    static int tabSize = 4;
+    static int tabSize = 8;
+    static String outputFilename;
 
     public static void main(String[] args) {
+
+        String ctags_location=null;
+        String default_location=null;
+        String default_name=null;
+
+        File configFile = new File("ccommenter_config.txt");
+        BufferedReader configBR = getReader(configFile);
+        if(configBR != null){
+            try {
+                while(configBR.ready()){
+                    String line = configBR.readLine();
+                    List<String> fields = Arrays.asList(line.split("\t"));
+                    String field1 = getStringField(fields, 0);
+
+                    if(field1 != null && field1.equals("ctags_location")){
+                        ctags_location = getStringField(fields, 1);
+                    } else if (field1 != null && field1.equals("default_location")){
+                        default_location = getStringField(fields, 1);
+                    } else if (field1 != null && field1.equals("default_name")){
+                        default_name = getStringField(fields, 1);
+                    }
+                }
+            } catch (IOException e){
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+
         // Get input file
-        File inputFile = getFile();
+        File inputFile = getFile(default_location);
         if (inputFile == null){
             System.err.println("No input file selected");
             System.exit(1);
@@ -35,7 +66,8 @@ public class Main {
         }
 
         // Run ctags
-        File ctags = new File("D:\\Programming\\IdeaProjects\\CCommenter\\ctags.exe");
+        ctags_location = (ctags_location == null) ? "ctags.exe" : ctags_location;
+        File ctags = new File(ctags_location);
         File ctagsFile = runCtags(ctags, inputFile);
         if(ctagsFile == null){
             System.err.println("Error running ctags");
@@ -43,37 +75,38 @@ public class Main {
         }
 
         // Parse ctags lines
-        ArrayList<ArrayList<ArrayList<String>>> functionFields = getCtagLines(ctagsFile);
+        List<Function> functionsList = getCtagLines(ctagsFile);
+        ctagsFile.delete();
 
         // Read in file
         int line = 1;
-        ArrayList<String> functionStrings = new ArrayList<>();
-        String beforeF1;
+        String beforeF1="";
 
         try {
             StringBuilder beforeF1SB = new StringBuilder();
 
-            int f1Start = getFunctionStart(0, functionFields);
+            int f1Start = getFunctionStart(0, functionsList);
             while (codeBR.ready() && line < f1Start) {
                 beforeF1SB.append(codeBR.readLine()).append("\n");
                 line++;
             }
-            functionStrings.add(beforeF1SB.toString());
+            beforeF1 = trimNewlines(beforeF1SB.toString());
 
-            for(int functionNum = 0; functionNum < functionFields.size(); functionNum++){
+            for(int functionNum = 0; functionNum < functionsList.size(); functionNum++){
                 StringBuilder functionSB = new StringBuilder();
-                while (codeBR.ready() && line < Integer.parseInt(functionFields.get(functionNum).get(0).get(1)) + 1){
+                while (codeBR.ready() && line < functionsList.get(functionNum).getEnd() + 1){
                     functionSB.append(codeBR.readLine()).append("\n");
                     line++;
                 }
-                functionStrings.add(functionSB.toString());
+                functionsList.get(functionNum).setCode(functionSB.toString());
 
                 StringBuilder afterFunctionSB = new StringBuilder();
-                while (codeBR.ready() && line < getFunctionStart(functionNum+1, functionFields)){
+                int nextStart = getFunctionStart(functionNum+1, functionsList);
+                while (codeBR.ready() && line < nextStart){
                     afterFunctionSB.append(codeBR.readLine()).append("\n");
                     line++;
                 }
-                functionStrings.add(afterFunctionSB.toString());
+                functionsList.get(functionNum).setAfter(afterFunctionSB.toString());
             }
 
             codeBR.close();
@@ -82,34 +115,25 @@ public class Main {
             System.exit(1);
         }
 
-        // Trim leading and trialing newlines from the strings
-        for(int i=0; i < functionStrings.size(); i++){
-            String trimmedString = trimNewlines(functionStrings.get(i));
-            functionStrings.set(i, trimmedString);
-        }
-
         // Get SC and write file
-        StartComment sc = new StartComment(inputFile.getName());
+        StartComment sc = new StartComment(inputFile.getName(), default_name);
         try {
             sc.promptForComment();
 
             codeBW.append(sc.getComment());
             codeBW.newLine();
+            codeBW.append(beforeF1);
+            codeBW.newLine();
 
-            for (int i = 0; i < functionStrings.size(); i++) {
-                if(i % 2 == 1){
-                    int functionNumber = (i-1)/2;
-                    FunctionComment fc = new FunctionComment(functionStrings.get(i), functionFields.get(functionNumber).get(0).get(2), functionFields.get(functionNumber).get(1));
-                    fc.promptForComment();
+            for (Function f : functionsList){
+                FunctionComment fc = new FunctionComment(f.getCode(), f.getReturnType(), f.getParameters());
+                fc.promptForComment();
 
-                    codeBW.newLine();
-                    codeBW.append(fc.getComment());
-                    codeBW.append(functionStrings.get(i));
-                    codeBW.newLine();
-                } else {
-                    codeBW.append(functionStrings.get(i));
-                    codeBW.newLine();
-                }
+                codeBW.append(fc.getComment());
+                codeBW.append(f.getCode());
+                codeBW.newLine();
+                codeBW.append(f.getAfter());
+                codeBW.newLine();
             }
 
             codeBW.close();
@@ -121,88 +145,53 @@ public class Main {
             System.exit(0);
         }
 
-        JOptionPane.showMessageDialog(null, "Commented sucessfully", Main.title, JOptionPane.PLAIN_MESSAGE);
+        JOptionPane.showMessageDialog(null, "Commented file sucessfully saved under " + outputFilename, Main.title, JOptionPane.PLAIN_MESSAGE);
 
-
-        //Junk
-        /*
-        StartComment sc = new StartComment(inputFile.getName());
-        try {
-            sc.promptForComment();
-        } catch (CancellationException e){
-            System.out.println("Cancelled");
-            System.exit(0);
-        }
-        System.out.println(sc.getComment());
-
-        /*
-        try {
-            codeBW.append(sc.getComment());
-            while (codeBR.ready()) {
-                codeBW.append(codeBR.readLine());
-                codeBW.newLine();
-            }
-            codeBW.close();
-        } catch (IOException e){
-            System.err.println("Error while reading file");
-            System.exit(1);
-        }
-
-        FunctionComment fc = new FunctionComment("main() { }");
-        try {
-            fc.promptForComment();
-        } catch (CancellationException e){
-            System.out.println("Cancelled");
-            System.exit(0);
-        }
-        System.out.println(fc.getComment());
-        */
     }
 
-    private static int getFunctionStart(int n, ArrayList<ArrayList<ArrayList<String>>> functionFields){
-        if(n<functionFields.size()){
-            return Integer.parseInt(functionFields.get(n).get(0).get(0));
-        } else {
-            return Integer.MAX_VALUE;
-        }
-    }
-
-    private static String trimNewlines (String s){
-         return s.replaceAll("\\A\\n+", "").replaceAll("\\n+\\z", "");
+    private static int getFunctionStart(int n, List<Function> fList){
+        return (fList.size() <= n) ? Integer.MAX_VALUE : fList.get(n).getStart();
     }
 
     private static BufferedReader getReader(File inputFile){
         try {
-            BufferedReader br = new BufferedReader(new FileReader(inputFile));
-            return br;
+            return new BufferedReader(new FileReader(inputFile));
         } catch (FileNotFoundException e){
-            e.printStackTrace();
             return null;
         }
     }
 
     private static BufferedWriter getWriter(File inputFile){
-        String fullPath = inputFile.getAbsolutePath();
-        String outputFilename = FilenameUtils.removeExtension(fullPath) + "_commented." + FilenameUtils.getExtension(fullPath);
-        File outputFile = new File(outputFilename);
-
         try {
-            if (!outputFile.exists()) {
-                BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
-                return bw;
-            } else {
-                System.err.println("Output file already exists");
-                return null;
-            }
+            return new BufferedWriter(new FileWriter(getOutputFile(inputFile)));
         } catch (IOException e){
             e.printStackTrace();
             return null;
         }
     }
 
-    private static File getFile (){
+    private static File getOutputFile(File inputFile){
+        String fullPath = inputFile.getAbsolutePath();
+        String oFilename = FilenameUtils.removeExtension(fullPath) + "_commented." + FilenameUtils.getExtension(fullPath);
+        File outputFile = new File(oFilename);
+
+        int n = 1;
+        while(outputFile.exists()){
+            oFilename = FilenameUtils.removeExtension(fullPath) + "_commented_" + n + "." + FilenameUtils.getExtension(fullPath);
+            outputFile = new File(oFilename);
+            n++;
+        }
+
+        outputFilename = oFilename;
+        return outputFile;
+    }
+
+    private static File getFile (String default_location){
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+        if(default_location == null){
+            default_location = System.getProperty("user.home");
+        }
+        fileChooser.setCurrentDirectory(new File(default_location));
         int result = fileChooser.showOpenDialog(null);
 
         if (result == JFileChooser.APPROVE_OPTION) {
@@ -215,7 +204,8 @@ public class Main {
     private static File runCtags(File exe, File inputFile) {
         try {
             String ctagFilename = inputFile.getAbsolutePath() + ".ctags";
-            Process p = Runtime.getRuntime().exec("\"" + exe.getAbsolutePath() + "\" --fields=+Stne -u -o \"" + ctagFilename + "\" \"" + inputFile.getAbsolutePath() + "\"");
+            String command = "\"" + exe.getAbsolutePath() + "\" --fields=+Stne -u -o \"" + ctagFilename + "\" \"" + inputFile.getAbsolutePath() + "\"";
+            Process p = Runtime.getRuntime().exec(command);
             p.waitFor();
 
             File ctagFile = new File (ctagFilename);
@@ -224,15 +214,15 @@ public class Main {
             } else {
                 return null;
             }
-        } catch (InterruptedException | IOException e){
+        } catch (InterruptedException| IOException e){
             e.printStackTrace();
             return null;
         }
     }
 
-    private static ArrayList<ArrayList<ArrayList<String>>> getCtagLines (File ctags){
+    private static List<Function> getCtagLines (File ctags){
         BufferedReader ctagsBR = getReader(ctags);
-        ArrayList<ArrayList<ArrayList<String>>> allFunctionBounds = new ArrayList<>();
+        List<Function> functionsList = new ArrayList<>();
 
         try {
             while(ctagsBR.ready()){
@@ -240,29 +230,35 @@ public class Main {
                 if(line.charAt(0) != '!'){
                     String[] fields = line.split("\t");
 
-                    ArrayList<ArrayList<String>> functionFields = new ArrayList<>();
+                    Function f = new Function();
 
-                    String start = getFunctionField(fields, "line:");
-                    String end = getFunctionField(fields, "end:");
+                    int start = Integer.parseInt(getFunctionField(fields, "line:"));
+                    int end = Integer.parseInt(getFunctionField(fields, "end:"));
+
                     String returnType = getFunctionField(fields, "typeref:typename:");
                     returnType = (returnType == null) ? "void" : returnType;
 
-                    ArrayList<String> info = new ArrayList<>();
-                    info.add(start);
-                    info.add(end);
-                    info.add(returnType);
-                    functionFields.add(info);
+                    String parameters = getFunctionField(fields, "signature:");
 
-                    String parameters = getFunctionField(fields, "signature:").replaceAll("\\)$", "").replaceAll("^\\(", "");
+                    if(parameters != null) { // Add only if has signature
+                        Matcher m = Pattern.compile("\\(([^)]+)\\)").matcher(parameters);
+                        if(m.find()){
+                            parameters = m.group(1);
+                        }
+                        List<String> parametersList = Arrays.asList(parameters.split(","));
 
-                    ArrayList<String> parametersList = new ArrayList<String>(Arrays.asList(parameters.split(",")));
-                    functionFields.add(parametersList);
+                        f.setStart(start);
+                        f.setEnd(end);
+                        f.setReturnType(returnType);
+                        f.setParameters(parametersList);
 
-                    allFunctionBounds.add(functionFields);
+                        functionsList.add(f);
+                    }
                 }
             }
 
-            return allFunctionBounds;
+            ctagsBR.close();
+            return functionsList;
 
         } catch (IOException e){
             System.err.println("Error reading ctags file");
@@ -277,5 +273,17 @@ public class Main {
             }
         }
         return null;
+    }
+
+    public static String trimNewlines(String s){
+        return s.replaceAll("\\A\\n+", "").replaceAll("\\n+\\z", "");
+    }
+
+    private static String getStringField(List<String> list, int n){
+        try {
+            return list.get(n);
+        } catch (ArrayIndexOutOfBoundsException e){
+            return null;
+        }
     }
 }

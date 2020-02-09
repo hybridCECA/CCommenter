@@ -1,0 +1,3 @@
+ctags_location
+default_location	D:\Programming
+default_name	Evan Chen

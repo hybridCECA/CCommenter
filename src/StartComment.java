@@ -1,14 +1,17 @@
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 
 public class StartComment {
     private String comment;
     private String filename;
+    private String name;
 
-    public StartComment(String fn){
+    public StartComment(String fn, String n){
         filename = fn;
+        name = n;
     }
 
     public String getComment(){
@@ -16,18 +19,20 @@ public class StartComment {
     }
 
     public void promptForComment() throws CancellationException {
-        ArrayList<String> startCommentList = new ArrayList<>();
+        List<String> startCommentList = new ArrayList<>();
 
         startCommentList.add(filename);
         startCommentList.add(prompt(startCommentList, "Enter file description:"));
         startCommentList.add("");
-        startCommentList.add(prompt(startCommentList, "Enter programmer name (and optionally student ID):"));
+
+        name = (name == null) ? prompt(startCommentList, "Enter programmer name (and optionally student ID):") : name;
+        startCommentList.add(name);
         startCommentList.add(getDate());
 
         comment = formatStartComment(startCommentList);
     }
 
-    private String prompt(ArrayList<String> startCommentList, String inputPrompt) throws CancellationException {
+    private String prompt(List<String> startCommentList, String inputPrompt) throws CancellationException {
         return (new Prompter("File Start Comment:\n" + formatStartComment(startCommentList) + "\n" + inputPrompt)).prompt();
     }
 
@@ -36,7 +41,7 @@ public class StartComment {
         return format.format(new Date());
     }
 
-    private String formatStartComment(ArrayList<String> scList){
+    private String formatStartComment(List<String> scList){
         StringBuilder startComment = new StringBuilder();
 
         startComment.append("/*\n");

@@ -1,16 +1,17 @@
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 
 public class FunctionComment {
     private String code;
     private String returnType;
-    private ArrayList<String> parameters;
+    private List<String> parameters;
     private String comment;
     private String functionDescription;
-    private ArrayList<ArrayList<String>> sectionLists;
-    private String[] sections = { "Preconditions:", "Postconditions:", "Parameters:\t", "Returns:\t\t", "Exceptions:\t" };
+    private List<List<String>> sectionLists;
+    private String[] sections = { "Preconditions:", "Postconditions:", "Parameters:\t", "Returns:\t", "Exceptions:\t" };
 
-    public FunctionComment(String functionCode, String returnT, ArrayList<String> p){
+    public FunctionComment(String functionCode, String returnT, List<String> p){
         code = functionCode;
         returnType = returnT;
         parameters = p;
@@ -34,7 +35,7 @@ public class FunctionComment {
     }
 
     private void promptForSectionComment(String sectionTitle) throws CancellationException{
-        ArrayList<String> sectionList = new ArrayList<>();
+        List<String> sectionList = new ArrayList<>();
         sectionLists.add(sectionList);
 
         int parameterCounter = 0;
@@ -82,7 +83,7 @@ public class FunctionComment {
         output.append(" * ").append(((functionDescription == null) ? "" : functionDescription)).append("\n");
         output.append(" *\n");
 
-        for (ArrayList<String> list : sectionLists){
+        for (List<String> list : sectionLists){
             output.append(formatSection(sections[i], list, generalMaxTabs)).append("\n");
             i++;
         }
@@ -93,7 +94,7 @@ public class FunctionComment {
         return output.toString();
     }
 
-    private String formatSection(String sectionTitle, ArrayList<String> list, int maxTabs){
+    private String formatSection(String sectionTitle, List<String> list, int maxTabs){
         StringBuilder section = new StringBuilder(" * ");
 
         if (list.size() == 0){
@@ -115,9 +116,9 @@ public class FunctionComment {
             int extraTabs = getExtraTabs(list.get(valueIndex), maxTabs);
 
             if(descriptionIndex >= list.size()){
-                section.append("\n *").append(tabs(4)).append("\t").append(list.get(valueIndex));
+                section.append("\n *").append(tabs(2)).append("\t").append(list.get(valueIndex));
             } else {
-                section.append("\n *").append(tabs(4)).append("\t").append(list.get(valueIndex)).append(tabs(extraTabs)).append(list.get(descriptionIndex));
+                section.append("\n *").append(tabs(2)).append("\t").append(list.get(valueIndex)).append(tabs(extraTabs)).append(list.get(descriptionIndex));
             }
         }
 
@@ -138,7 +139,7 @@ public class FunctionComment {
         return tabs - s.length()/Main.tabSize;
     }
 
-    private int getMaxEvenTabs(ArrayList<String> list){
+    private int getMaxEvenTabs(List<String> list){
         boolean even = true;
         int maxTabs = 1;
 
@@ -156,10 +157,10 @@ public class FunctionComment {
         return maxTabs;
     }
 
-    private int getMaxEvenTabsFromList(ArrayList<ArrayList<String>> listOfLists){
+    private int getMaxEvenTabsFromList(List<List<String>> listOfLists){
         int max = 1;
 
-        for (ArrayList<String> list : listOfLists){
+        for (List<String> list : listOfLists){
             int listMax = getMaxEvenTabs(list);
             if(listMax > max){
                 max = listMax;
