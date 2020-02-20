@@ -10,19 +10,33 @@ public class Prompter {
     }
 
     public String prompt() throws CancellationException {
-        JTextArea jt = new JTextArea(text);
-        jt.setEditable(false);
-        jt.setOpaque(false);
-        jt.setTabSize(Main.tabSize);
-        jt.setFont(new Font("monospaced", Font.PLAIN, 12));
-
-        String result = JOptionPane.showInputDialog(null, jt, Main.title, JOptionPane.PLAIN_MESSAGE);
+        String result = JOptionPane.showInputDialog(null, formatText(), Main.title, JOptionPane.PLAIN_MESSAGE);
 
         if (result == null){
             throw new CancellationException();
         } else {
             return result;
         }
+    }
+
+    public boolean ask() {
+        int result = JOptionPane.showConfirmDialog(null, formatText(), Main.title, JOptionPane.YES_NO_CANCEL_OPTION);
+
+        if (result == JOptionPane.CANCEL_OPTION){
+            throw new CancellationException();
+        } else {
+            return result == JOptionPane.YES_OPTION;
+        }
+    }
+
+    private JTextArea formatText(){
+        JTextArea jt = new JTextArea(text);
+        jt.setEditable(false);
+        jt.setOpaque(false);
+        jt.setTabSize(Main.tabSize);
+        jt.setFont(new Font("monospaced", Font.PLAIN, 12));
+
+        return jt;
     }
 
     private String tabsToSpaces (String s){
