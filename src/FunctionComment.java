@@ -4,6 +4,7 @@ import java.util.concurrent.CancellationException;
 
 public class FunctionComment {
     private String code;
+    private int minTabs;
     private String returnType;
     private List<String> parameters;
     private String comment;
@@ -13,6 +14,8 @@ public class FunctionComment {
 
     public FunctionComment(String functionCode, String returnT, List<String> p){
         code = functionCode;
+        minTabs = calculateMinTabs();
+        System.out.println(minTabs);
         returnType = returnT;
         parameters = p;
 
@@ -34,23 +37,51 @@ public class FunctionComment {
 
     }
 
+    private int calculateMinTabs(){
+        int min=Integer.MAX_VALUE;
+        int current=0;
+        boolean counting=true;
+
+        for(char c : code.toCharArray()){
+            if(counting && c=='\t'){
+                current++;
+            } else if(c=='\n'){
+                counting=true;
+                current=0;
+            } else {
+                counting=false;
+                min=
+                        Math.min(min,current);
+            }
+        }
+
+        return min;
+
+
+    }
+
     private void promptForSectionComment(String sectionTitle) throws CancellationException{
         List<String> sectionList = new ArrayList<>();
         sectionLists.add(sectionList);
 
         int parameterCounter = 0;
+
         boolean returnDone = false;
 
         while (true) {
             String value;
 
+
             if(sectionTitle.equals(sections[2])){
                 if(parameterCounter >= parameters.size()) {
+
                     break;
+
                 }
                 value = parameters.get(parameterCounter);
                 parameterCounter++;
             } else if (sectionTitle.equals(sections[3])) {
+
                 if(returnDone) {
                     break;
                 } else {
@@ -66,6 +97,7 @@ public class FunctionComment {
             }
 
             sectionList.add(value);
+
             sectionList.add(prompt("Enter description for " + sectionList.get(sectionList.size() -1) + ":"));
         }
     }
@@ -74,22 +106,27 @@ public class FunctionComment {
         return (new Prompter("Function Code:\n" + code + "\n\nFunction Comment:\n" + formatFunctionComment() + "\n\n" + inputPrompt)).prompt();
     }
 
+
+
     private String formatFunctionComment(){
         StringBuilder output = new StringBuilder();
         int generalMaxTabs = getMaxEvenTabsFromList(sectionLists);
         int i=0;
 
-        output.append("/*\n");
-        output.append(" * ").append(((functionDescription == null) ? "" : functionDescription)).append("\n");
-        output.append(" *\n");
+        output.append(tabs(minTabs)).append("/*\n");
+        output.append(tabs(minTabs)).append(" * ").append(((functionDescription == null) ? "" : functionDescription)).append("\n");
+        output.append(tabs(minTabs)).append(" *\n");
+
 
         for (List<String> list : sectionLists){
-            output.append(formatSection(sections[i], list, generalMaxTabs)).append("\n");
+            output.append(tabs(minTabs)).append(formatSection(sections[i], list, generalMaxTabs)).append("\n");
+
             i++;
+
         }
 
-        output.append(" *\n");
-        output.append(" */\n");
+        output.append(tabs(minTabs)).append(" *\n");
+        output.append(tabs(minTabs)).append(" */\n");
 
         return output.toString();
     }
@@ -116,9 +153,9 @@ public class FunctionComment {
             int extraTabs = getExtraTabs(list.get(valueIndex), maxTabs);
 
             if(descriptionIndex >= list.size()){
-                section.append("\n *").append(tabs(2)).append("\t").append(list.get(valueIndex));
+                section.append("\n").append(tabs(minTabs)).append(" *").append(tabs(2)).append("\t").append(list.get(valueIndex));
             } else {
-                section.append("\n *").append(tabs(2)).append("\t").append(list.get(valueIndex)).append(tabs(extraTabs)).append(list.get(descriptionIndex));
+                section.append("\n").append(tabs(minTabs)).append(" *").append(tabs(2)).append("\t").append(list.get(valueIndex)).append(tabs(extraTabs)).append(list.get(descriptionIndex));
             }
         }
 

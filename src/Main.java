@@ -12,10 +12,9 @@ import java.util.regex.Pattern;
 public class Main {
     static String title = "CCommenter";
     static int tabSize = 8;
-    static String outputFilename;
+    private static String outputFilename;
 
     public static void main(String[] args) {
-
         // Read config file
         String ctags_location = null;
         String default_location = null;
@@ -125,7 +124,10 @@ public class Main {
 
                 codeBW.append(f.getCode());
                 codeBW.append("\n");
-                codeBW.append(f.getAfter());
+
+                if(!f.getAfter().equals("")){
+                    codeBW.append("\n").append(f.getAfter()).append("\n");
+                }
                 codeBW.append("\n");
             }
 
