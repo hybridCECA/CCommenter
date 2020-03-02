@@ -22,11 +22,19 @@ public class StartComment {
         List<String> startCommentList = new ArrayList<>();
 
         startCommentList.add(filename);
-        startCommentList.add(prompt(startCommentList, "Enter file description:"));
+
+        String description = prompt(startCommentList, "Enter file description:");
+        if(!description.isEmpty()) {
+            startCommentList.add(description);
+        }
+
         startCommentList.add("");
 
         name = (name == null) ? prompt(startCommentList, "Enter programmer name (and optionally student ID):") : name;
-        startCommentList.add(name);
+        if(!name.isEmpty()) {
+            startCommentList.add(name);
+        }
+
         startCommentList.add(getDate());
 
         comment = formatStartComment(startCommentList);

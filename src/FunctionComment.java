@@ -15,7 +15,6 @@ public class FunctionComment {
     public FunctionComment(String functionCode, String returnT, List<String> p){
         code = functionCode;
         minTabs = calculateMinTabs();
-        System.out.println(minTabs);
         returnType = returnT;
         parameters = p;
 
@@ -114,12 +113,16 @@ public class FunctionComment {
         int i=0;
 
         output.append(tabs(minTabs)).append("/*\n");
-        output.append(tabs(minTabs)).append(" * ").append(((functionDescription == null) ? "" : functionDescription)).append("\n");
-        output.append(tabs(minTabs)).append(" *\n");
+        if(functionDescription != null && !functionDescription.equals("")) {
+            output.append(tabs(minTabs)).append(" * ").append(functionDescription).append("\n");
+            output.append(tabs(minTabs)).append(" *\n");
+        }
 
 
         for (List<String> list : sectionLists){
-            output.append(tabs(minTabs)).append(formatSection(sections[i], list, generalMaxTabs)).append("\n");
+            if(list.size()>0) {
+                output.append(tabs(minTabs)).append(formatSection(sections[i], list, generalMaxTabs)).append("\n");
+            }
 
             i++;
 
@@ -134,6 +137,9 @@ public class FunctionComment {
     private String formatSection(String sectionTitle, List<String> list, int maxTabs){
         StringBuilder section = new StringBuilder(" * ");
 
+
+
+
         if (list.size() == 0){
             section.append(sectionTitle).append("\tnone");
             return section.toString();
@@ -147,7 +153,7 @@ public class FunctionComment {
             section.append(sectionTitle).append("\t").append(list.get(0)).append(tabs(firstExtraTabs)).append(list.get(1));
         }
 
-        for (int i=1; i<list.size()/2; i++){
+        for (int i=1; i<list.size()/2+list.size()%2; i++){
             int valueIndex = 2*i;
             int descriptionIndex = 2*i+1;
             int extraTabs = getExtraTabs(list.get(valueIndex), maxTabs);
