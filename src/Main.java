@@ -9,14 +9,14 @@ import java.util.concurrent.CancellationException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Main {
+class Main {
     static String title = "CCommenter";
     static int tabSize = 8;
     private static String outputFilename;
 
     // Config file variables
-    public static int rows_max = 50;
-    public static int cols_max = 250;
+    static int rows_max = 50;
+    static int cols_max = 250;
     private static String ctags_location = "ctags.exe";
     private static String default_location = null;
     private static String default_name = null;
@@ -138,20 +138,27 @@ public class Main {
                 String field2 = getStringField(fields, 1);
 
                 if(field1 != null && field2 != null) {
-                    if (field1.equals("ctags_location")) {
-                        ctags_location = field2;
-                    } else if (field1.equals("default_location")) {
-                        default_location = field2;
-                    } else if (field1.equals("default_name")) {
-                        default_name = field2;
+                    switch (field1) {
+                        case "ctags_location":
+                            ctags_location = field2;
+                            break;
+                        case "default_location":
+                            default_location = field2;
+                            break;
+                        case "default_name":
+                            default_name = field2;
+                            break;
                     }
 
                     try {
                         int tmpInt = Integer.parseInt(field2);
-                        if (field1.equals("rows_max")) {
-                            rows_max = tmpInt;
-                        } else if (field1.equals("cols_max")) {
-                            cols_max = tmpInt;
+                        switch (field1) {
+                            case "rows_max":
+                                rows_max = tmpInt;
+                                break;
+                            case "cols_max":
+                                cols_max = tmpInt;
+                                break;
                         }
                     } catch (NumberFormatException e){
 

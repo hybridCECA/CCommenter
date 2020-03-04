@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
-public class FunctionComment {
+class FunctionComment {
     private String code;
     private int minTabs;
     private String returnType;
@@ -49,13 +49,11 @@ public class FunctionComment {
                 current=0;
             } else {
                 counting=false;
-                min= Math.min(min,current);
+                min=Math.min(min,current);
             }
         }
 
         return min;
-
-
     }
 
     private void promptForSectionComment(String sectionTitle) throws CancellationException{
@@ -69,17 +67,13 @@ public class FunctionComment {
         while (true) {
             String value;
 
-
             if(sectionTitle.equals(sections[2])){
                 if(parameterCounter >= parameters.size()) {
-
                     break;
-
                 }
                 value = parameters.get(parameterCounter);
                 parameterCounter++;
             } else if (sectionTitle.equals(sections[3])) {
-
                 if(returnDone) {
                     break;
                 } else {
@@ -93,7 +87,6 @@ public class FunctionComment {
                     break;
                 }
             }
-
             sectionList.add(value);
 
             sectionList.add(prompt("Enter description for " + sectionList.get(sectionList.size() -1) + ":"));
@@ -101,9 +94,10 @@ public class FunctionComment {
     }
 
     private String prompt(String inputPrompt) throws CancellationException{
-        return (new Prompter("Function Code:\n" + code + "\n\nFunction Comment:\n" + formatFunctionComment() + "\n\n" + inputPrompt)).prompt();
+        String prompt = "Function Code:\n" + code + "\n\nFunction Comment:\n" + formatFunctionComment() + "\n\n" + inputPrompt;
+        Prompter p = new Prompter(prompt);
+        return p.prompt();
     }
-
 
 
     private String formatFunctionComment(){
@@ -117,14 +111,11 @@ public class FunctionComment {
             output.append(tabs(minTabs)).append(" *\n");
         }
 
-
         for (List<String> list : sectionLists){
             if(list.size()>0) {
                 output.append(tabs(minTabs)).append(formatSection(sections[i], list, generalMaxTabs)).append("\n");
             }
-
             i++;
-
         }
 
         output.append(tabs(minTabs)).append(" *\n");
@@ -135,9 +126,6 @@ public class FunctionComment {
 
     private String formatSection(String sectionTitle, List<String> list, int maxTabs){
         StringBuilder section = new StringBuilder(" * ");
-
-
-
 
         if (list.size() == 0){
             section.append(sectionTitle).append("\tnone");

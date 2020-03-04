@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
-public class StartComment {
+class StartComment {
     private String comment;
     private String filename;
     private String name;
@@ -30,7 +30,10 @@ public class StartComment {
 
         startCommentList.add("");
 
-        name = (name == null) ? prompt(startCommentList, "Enter programmer name (and optionally student ID):") : name;
+        if(name == null){
+            name = prompt(startCommentList, "Enter programmer name (and optionally student ID):");
+        }
+
         if(!name.isEmpty()) {
             startCommentList.add(name);
         }

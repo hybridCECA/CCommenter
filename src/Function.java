@@ -1,7 +1,7 @@
 import java.util.List;
 
-public class Function {
-    List<String> parameters;
+class Function {
+    private List<String> parameters;
     private String code;
     private String after;
     private String returnType;
@@ -11,7 +11,6 @@ public class Function {
     public Function (){
 
     }
-
 
     // When setting the code, newlines are automatically trimmed
     public void setCode(String code) {

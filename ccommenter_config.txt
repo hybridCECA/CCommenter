@@ -1,5 +1,6 @@
+# The following 5 configuration variables are defined. A tab must separate the variable and the value
 ctags_location
 default_location	D:\Downloads\hw3
 default_name
-rows_max	50
-cols_max	250
+rows_max
+cols_max
