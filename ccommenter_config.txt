@@ -1,3 +1,5 @@
 ctags_location
 default_location	D:\Downloads\hw3
-default_name	Evan Chen 916832320
+default_name
+rows_max	50
+cols_max	250

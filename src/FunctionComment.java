@@ -49,8 +49,7 @@ public class FunctionComment {
                 current=0;
             } else {
                 counting=false;
-                min=
-                        Math.min(min,current);
+                min= Math.min(min,current);
             }
         }
 

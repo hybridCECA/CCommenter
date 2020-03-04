@@ -14,33 +14,16 @@ public class Main {
     static int tabSize = 8;
     private static String outputFilename;
 
+    // Config file variables
+    public static int rows_max = 50;
+    public static int cols_max = 250;
+    private static String ctags_location = "ctags.exe";
+    private static String default_location = null;
+    private static String default_name = null;
+
     public static void main(String[] args) {
         // Read config file
-        String ctags_location = null;
-        String default_location = null;
-        String default_name = null;
-
-        File configFile = new File("ccommenter_config.txt");
-        BufferedReader configBR = getReader(configFile);
-        try {
-            while (configBR.ready()) {
-                String line = configBR.readLine();
-                List<String> fields = Arrays.asList(line.split("\t"));
-                String field1 = getStringField(fields, 0);
-
-                if (field1 != null && field1.equals("ctags_location")) {
-                    ctags_location = getStringField(fields, 1);
-                } else if (field1 != null && field1.equals("default_location")) {
-                    default_location = getStringField(fields, 1);
-                } else if (field1 != null && field1.equals("default_name")) {
-                    default_name = getStringField(fields, 1);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
+        setConfigFile();
 
         // Get input file
         File inputFile = getFile(default_location);
@@ -52,7 +35,6 @@ public class Main {
         BufferedWriter codeBW = getWriter(inputFile);
 
         // Run ctags
-        ctags_location = (ctags_location == null) ? "ctags.exe" : ctags_location;
         File ctags = new File(ctags_location);
         File ctagsFile = runCtags(ctags, inputFile);
 
@@ -114,9 +96,11 @@ public class Main {
             codeBW.append("\n\n");
 
             for (Function f : functionsList) {
-                Prompter p2 = new Prompter("Function Code:\n" + f.getCode() + "\n\nDo you want insert a comment for this function?");
+                String trimmedCode = reduceLinesTo(f.getCode(), rows_max-12);
+
+                Prompter p2 = new Prompter("Function Code:\n" + trimmedCode + "\n\nDo you want insert a comment for this function?");
                 if (p2.ask()) {
-                    FunctionComment fc = new FunctionComment(f.getCode(), f.getReturnType(), f.getParameters());
+                    FunctionComment fc = new FunctionComment(trimmedCode, f.getReturnType(), f.getParameters());
                     fc.promptForComment();
 
                     codeBW.append(fc.getComment());
@@ -141,6 +125,43 @@ public class Main {
         }
 
         JOptionPane.showMessageDialog(null, "Commented file sucessfully saved under " + outputFilename, Main.title, JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private static void setConfigFile(){
+        File configFile = new File("ccommenter_config.txt");
+        BufferedReader configBR = getReader(configFile);
+        try {
+            while (configBR.ready()) {
+                String line = configBR.readLine();
+                List<String> fields = Arrays.asList(line.split("\t"));
+                String field1 = getStringField(fields, 0);
+                String field2 = getStringField(fields, 1);
+
+                if(field1 != null && field2 != null) {
+                    if (field1.equals("ctags_location")) {
+                        ctags_location = field2;
+                    } else if (field1.equals("default_location")) {
+                        default_location = field2;
+                    } else if (field1.equals("default_name")) {
+                        default_name = field2;
+                    }
+
+                    try {
+                        int tmpInt = Integer.parseInt(field2);
+                        if (field1.equals("rows_max")) {
+                            rows_max = tmpInt;
+                        } else if (field1.equals("cols_max")) {
+                            cols_max = tmpInt;
+                        }
+                    } catch (NumberFormatException e){
+
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
     private static int getFunctionStart(int n, List<Function> fList) {
@@ -191,6 +212,7 @@ public class Main {
             default_location = System.getProperty("user.home");
         }
         fileChooser.setCurrentDirectory(new File(default_location));
+        fileChooser.setDialogTitle("Open Source Code");
         int result = fileChooser.showOpenDialog(null);
 
         if (result == JFileChooser.APPROVE_OPTION) {
@@ -303,5 +325,22 @@ public class Main {
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
         }
+    }
+
+    private static String reduceLinesTo(String s, int linesNum){
+        int line = 1;
+        int charNum = 0;
+
+        for(char c : s.toCharArray()){
+            if(line >= linesNum -1){
+                return s.substring(0, charNum) + "...";
+            }
+            if(c == '\n'){
+                line++;
+            }
+            charNum++;
+        }
+
+        return s;
     }
 }
