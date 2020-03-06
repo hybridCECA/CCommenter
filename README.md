@@ -14,4 +14,11 @@ CCommenter is a Java program that aids in C and C++ Program commenting by prompt
  
  # Usage
  
- - 
+  <img src="docs/images/img1.png" width="650">
+ 
+ 1. Download the [latest release](https://github.com/hybridCECA/CCommenter/releases)
+ 2. Edit ccommenter_config.txt (optional)
+ 3. Run CCommenter.jar
+ 4. Choose the source file and enter information
+ 5. Review the output file and rename it to the original file
+ 6. Done!
